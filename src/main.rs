@@ -55,4 +55,14 @@ fn main() {
         Err(e) => eprintln!("Thread panicked with error: {}", e),
     }
 
+    match thread_communication::thread_receive_timeout_error(){
+        Ok(_) => println!("Channel receive with timeout successful."),
+        Err(e) => eprintln!("Thread panicked with error: {}", e),
+    }
+
+
+    match thread_communication::thread_enum_send_channel(){
+        Ok(_) => println!("Channel receive messages with a structred format tagging enum to the message structre."),
+        Err(e) => eprintln!("Thread panicked with error: {}", e),
+    }
 }

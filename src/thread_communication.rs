@@ -203,3 +203,97 @@ pub fn thread_receive_channel_non_blocking() -> Result<(), Box<dyn std::error::E
     Ok(())
 
 }
+
+pub fn thread_receive_timeout_error() -> Result<(), Box<dyn std::error::Error>>{
+    let (sender, receiver) = mpsc::channel();
+    thread::spawn(move || {
+        thread::sleep(Duration::from_millis(300));
+        sender.send("delayed message").unwrap();
+    });
+
+    // Wait up to 100ms — will timeout
+    match receiver.recv_timeout(Duration::from_millis(100)) {
+        Ok(msg) => println!("  Got: {}", msg),
+        Err(mpsc::RecvTimeoutError::Timeout) => println!("  ⏰ Timed out after 100ms"),
+        Err(mpsc::RecvTimeoutError::Disconnected) => println!("  Disconnected"),
+    }
+
+    match receiver.recv_timeout(Duration::from_millis(500)) {
+        Ok(msg) => println!("  Got: {}", msg),
+        Err(mpsc::RecvTimeoutError::Timeout) => println!("  ⏰ Timed out"),
+        Err(mpsc::RecvTimeoutError::Disconnected) => println!("  Disconnected"),
+    }
+
+    return Ok(())
+
+}
+
+pub fn thread_enum_send_channel() -> Result<(), Box<dyn std::error::Error>>{
+    // ========================================================================
+    // LESSON 7: Channel with Enum Messages — Type-Safe Protocols
+    // ========================================================================
+    //
+    // POWERFUL PATTERN: Define message types as enums!
+    // This creates a type-safe protocol between threads.
+    //
+    // Think of it like defining an API between your threads.
+    //
+    println!("━━━ Lesson 7: Typed Message Protocols ━━━\n");
+    // Define our message protocol
+    #[derive(Debug)]
+    enum WorkerMessage {
+        NewJob(String),
+        Data(Vec<u8>),
+        Ping,
+        Shutdown,
+    }
+
+    #[derive(Debug)]
+    enum WorkerResponse {
+        JobComplete(String),
+        Pong,
+        ShuttingDown,
+    }
+    // Two channels: one for commands, one for responses
+    let (send_cmd, recv_cmd) = mpsc::channel::<WorkerMessage>();
+    let (send_resp, recv_resp) = mpsc::channel::<WorkerResponse>();
+    let worker = thread::spawn(move || {
+        for cmd in recv_cmd{
+            match cmd{
+                WorkerMessage::NewJob(job) =>{
+                    println!("  🔧 Worker: Processing job '{}'", job);
+                    thread::sleep(Duration::from_millis(50));
+                    send_resp.send(WorkerResponse::JobComplete(job)).unwrap();
+                },
+                WorkerMessage::Data(bytes) => {
+                    println!("  📦 Worker: Received {} bytes", bytes.len());
+                },
+                WorkerMessage::Ping => {
+                    println!("  🏓 Worker: Ping received!");
+                    send_resp.send(WorkerResponse::Pong).unwrap();
+                },
+                WorkerMessage::Shutdown => {
+                    println!("  🛑 Worker: Shutting down...");
+                    send_resp.send(WorkerResponse::ShuttingDown).unwrap();
+                    break; // Exit the loop
+                }
+            }
+        }
+    });
+
+    // Main thread sends commands
+    send_cmd.send(WorkerMessage::Ping).unwrap();
+    println!("  Response: {:?}", recv_resp.recv().unwrap());
+ 
+    send_cmd.send(WorkerMessage::NewJob("compile-report".into())).unwrap();
+    println!("  Response: {:?}", recv_resp.recv().unwrap());
+ 
+    send_cmd.send(WorkerMessage::Data(vec![1, 2, 3, 4, 5])).unwrap();
+ 
+    send_cmd.send(WorkerMessage::Shutdown).unwrap();
+    println!("  Response: {:?}", recv_resp.recv().unwrap());
+ 
+    worker.join().unwrap();
+    return Ok(())
+
+}
