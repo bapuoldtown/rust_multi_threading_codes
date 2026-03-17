@@ -1,5 +1,6 @@
 mod basic_thread;
 mod thread_communication;
+mod shared_state_threading;
 fn main() {
     println!("Hello, world!");
     //running the basic code first
@@ -64,5 +65,20 @@ fn main() {
     match thread_communication::thread_enum_send_channel(){
         Ok(_) => println!("Channel receive messages with a structred format tagging enum to the message structre."),
         Err(e) => eprintln!("Thread panicked with error: {}", e),
+    }
+    match shared_state_threading::arc_shared_copy(){
+        Ok(_) => println!("Arc sare copy to avoiud repetative clone "),
+        Err(e) => eprintln!("Thread panicked with error: {}", e),
+
+    }
+    match shared_state_threading::one_resource_at_a_time(){
+        Ok(_) => println!("Mutex with Locks to isolate resource while operating on the same resources "),
+        Err(e) => eprintln!("Thread panicked with error: {}", e),
+
+    }
+    match shared_state_threading::concurrent_likes_scenarios(){
+        Ok(_) => println!("Concurrent likes "),
+        Err(e) => eprintln!("Thread panicked with error: {}", e),
+
     }
 }
