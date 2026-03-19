@@ -81,4 +81,22 @@ fn main() {
         Err(e) => eprintln!("Thread panicked with error: {}", e),
 
     }
+    match shared_state_threading::resource_locking_good_patterns(){
+        Ok(_) => println!("Good patterns to time sleep before locking resources likes "),
+        Err(e) => eprintln!("Thread panicked with error: {}", e),
+
+    }
+
+    match shared_state_threading::concurrent_read_single_writer(){
+        Ok(_) => println!("Multiple concurrent reads and single write lock"),
+        Err(e) => eprintln!("Thread panicked with error: {}", e),
+
+    }
+
+    match shared_state_threading::multiple_read_write_resembling_hotel_booking(){
+        Ok(_) => println!("Multiple concurrent reads and single write lock"),
+        Err(e) => eprintln!("Thread panicked with error: {}", e),
+
+    }
+
 }
